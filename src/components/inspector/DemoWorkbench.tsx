@@ -56,7 +56,7 @@ export const DemoWorkbench: React.FC<DemoWorkbenchProps> = ({
         <button
           type="button"
           onClick={() => setMobileDrawerOpen(true)}
-          aria-label="打开面试演示控制台"
+          aria-label="打开多端验收面板"
           className="pressable"
           style={{
             position: 'fixed',
@@ -76,7 +76,7 @@ export const DemoWorkbench: React.FC<DemoWorkbenchProps> = ({
           }}
         >
           <SlidersHorizontal size={13} />
-          <span>演示台</span>
+          <span>验收台</span>
         </button>
 
         {mobileDrawerOpen && (
@@ -206,7 +206,7 @@ export const DemoWorkbench: React.FC<DemoWorkbenchProps> = ({
             }}
           >
             <PanelRightOpen size={15} />
-            <span>展开演示台</span>
+            <span>展开验收面板</span>
           </button>
         )}
 

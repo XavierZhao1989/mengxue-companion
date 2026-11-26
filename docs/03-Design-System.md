@@ -1,6 +1,6 @@
 # 03 · 视觉排版与设计系统规范（Design System）
 
-> 对应岗位 JD 面试 5 步第 4 步：**「界面为什么这样排」**。工程实现见 [tokens.css](../src/styles/tokens.css)，跨工具 Token 文件见 [design-tokens.json](./design-tokens.json)。
+> 色彩对比度、字号阶梯、8pt 空间系统与多端安全区适配规范。工程实现见 [tokens.css](../src/styles/tokens.css)，跨工具 Token 文件见 [design-tokens.json](./design-tokens.json)。
 
 ## 1. 色彩系统（为什么选宣纸暖白，而不是纯白 + 高饱和蓝）
 

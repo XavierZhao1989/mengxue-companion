@@ -35,35 +35,35 @@ const STATE_OPTIONS: Array<{ id: SimNetworkMode; label: string }> = [
   { id: 'offline', label: '离线缓存' },
 ];
 
-const INTERVIEW_STEPS = [
+const QA_CHECKLIST_STEPS = [
   {
     step: 1,
-    title: '1. 用户要完成什么',
-    detail: '3-8岁家长睡前 5 分钟单手陪读与打卡，并借助「点字白话锦囊」解决不会讲国学的痛点。',
-    actionLabel: '看今日主任务卡',
+    title: '① 核心场景',
+    detail: '3–8 岁家长睡前 5 分钟单手陪读与打卡，借助「点字白话锦囊」降低伴读门槛。',
+    actionLabel: '查看今日主任务卡',
   },
   {
     step: 2,
-    title: '2. 页面怎么走',
-    detail: '3 个主 Tab（今日伴读/蒙学馆/伴学档案）+ 沉浸伴读页（保留 returnTab 返回栈与中途退出保存）。',
-    actionLabel: '切到小程序态看避让',
+    title: '② 路径与多端',
+    detail: '3 个主 Tab + 沉浸领读页，记忆来源 returnTab 返回栈，并适配微信小程序胶囊避让。',
+    actionLabel: '切换小程序避让态',
   },
   {
     step: 3,
-    title: '3. 空和失败怎么处理',
-    detail: '显式 5 态模型 + 800ms 慢网提示 + AbortController 防竞态 + 失败保留本地进度与一键重试。',
-    actionLabel: '一键注入接口报错',
+    title: '③ 空态与容错',
+    detail: '显式 5 态模型 + 800ms 弱网提示 + AbortController 防竞态 + 失败保留本地进度与一键重试。',
+    actionLabel: '模拟接口超时错误态',
   },
   {
     step: 4,
-    title: '4. 界面为什么这样排',
-    detail: '宣纸暖白护眼、8pt 空间节奏、底部拇指热区 ≥44pt、小屏 375px 零挤压。',
+    title: '④ 排版与规范',
+    detail: '宣纸暖白护眼色阶、8pt 间距网格、底部拇指热区 ≥44pt、375px 小屏零挤压。',
     actionLabel: '开启设计标注透视',
   },
   {
     step: 5,
-    title: '5. 最后代码怎么落地',
-    detail: 'React 19 + TS 严格模式 + CSS Tokens + Mock API 分层 + 管理后台联动 + Vitest 单测。',
+    title: '⑤ 后台联动',
+    detail: 'React 19 + TS 严格模式 + CSS Tokens + PC 运营后台增删改实时同步家长端。',
     actionLabel: '打开 PC 管理后台',
   },
 ];
@@ -104,13 +104,13 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
           }}
         >
           <Sparkles size={12} />
-          <span>面试演示控制台 · 点度 JD 定制</span>
+          <span>UI & QA 验收台</span>
         </div>
         <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#FFFFFF' }}>
-          启蒙小笺 Design Engineering
+          启蒙小笺 · 多端验收面板
         </h2>
         <p style={{ margin: '4px 0 0', fontSize: 12, color: '#9CA3AF', lineHeight: '18px' }}>
-          右侧实时操控左侧手机画框：切端形态、注异常态、开设计标注透视。
+          上线前自测：多屏安全区、弱网容错与设计规范走查。
         </p>
       </div>
 
@@ -215,14 +215,14 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         </div>
       </section>
 
-      {/* 4. JD 5-Step Interview Pitch Guide */}
+      {/* 4. Product & Engineering QA Checklist */}
       <section style={panelCardStyle}>
         <div style={sectionHeaderStyle}>
           <Layers size={14} />
-          <span>JD 规定「5 步面试讲稿」快跳</span>
+          <span>产品与工程 5 维自查</span>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {INTERVIEW_STEPS.map((item) => {
+          {QA_CHECKLIST_STEPS.map((item) => {
             const expanded = openStep === item.step;
             return (
               <div

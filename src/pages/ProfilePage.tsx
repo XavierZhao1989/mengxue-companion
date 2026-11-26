@@ -390,7 +390,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
           }}
         >
           <RotateCcw size={14} />
-          <span>重置演示数据（清空本地打卡进度）</span>
+          <span>恢复默认示例数据（重置本地进度）</span>
         </button>
       </div>
     </div>

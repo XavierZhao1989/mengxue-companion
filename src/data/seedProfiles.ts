@@ -39,8 +39,8 @@ export function createSeedChildren(baseDate: Date = new Date()): ChildProfile[] 
 
 export const SEED_DEVICE: HardwareDevice = {
   id: 'dev-pen-s1',
-  name: '点度伴读笔 S1',
-  model: 'DD-PEN-S1',
+  name: '小笺伴读笔 S1',
+  model: 'MX-PEN-S1',
   connected: true,
   battery: 86,
   firmware: 'v2.4.1',
