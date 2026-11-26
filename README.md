@@ -1,6 +1,6 @@
 # 启蒙小笺（MengXue Companion）
 
-> 🌐 **在线演示（Live Demo）**：[https://xavierzhao1989.github.io/mengxue-companion/](https://xavierzhao1989.github.io/mengxue-companion/)
+> 🌐 **在线演示（Live Demo）**：[https://mengxue-companion.vercel.app](https://mengxue-companion.vercel.app)
 
 面向 **3–8 岁儿童家长** 的每日 5 分钟国学蒙学伴读产品作品集（含 **家长端移动端 H5/PWA + 微信小程序避让态 + 轻量 PC 运营管理后台 + 面试演示与设计规范控制台**）。
 
