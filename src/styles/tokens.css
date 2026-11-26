@@ -1,0 +1,96 @@
+:root {
+  /* Color Palette - Warm Rice-Paper Modern Chinese Primer */
+  --bg-canvas: #FAF7F2;
+  --bg-surface: #FFFFFF;
+  --bg-surface-warm: #F4EFE6;
+  --bg-inspector: #181A1F;
+  --bg-inspector-card: #22252C;
+
+  --text-primary: #2C2621;
+  --text-secondary: #6B6056;
+  --text-muted: #9A8F84;
+  --text-inverse: #FFFFFF;
+
+  --brand-primary: #C85A32;
+  --brand-primary-pressed: #A84724;
+  --brand-primary-soft: #FCEEE8;
+
+  --brand-jade: #2F7D63;
+  --brand-jade-soft: #E7F4EF;
+
+  --brand-amber: #C97A00;
+  --brand-amber-soft: #FFF6E0;
+
+  --brand-danger: #CF3F38;
+  --brand-danger-soft: #FDECEB;
+
+  --border-subtle: #EAE2D6;
+  --border-strong: #D6CBB9;
+
+  /* Typography */
+  --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-primer: 'Kaiti SC', 'STKaiti', 'Songti SC', 'Noto Serif SC', Georgia, serif;
+
+  --text-display-size: 24px;
+  --text-display-lh: 32px;
+  --text-h1-size: 20px;
+  --text-h1-lh: 28px;
+  --text-h2-size: 17px;
+  --text-h2-lh: 24px;
+  --text-body-size: 15px;
+  --text-body-lh: 24px;
+  --text-caption-size: 12px;
+  --text-caption-lh: 18px;
+  --text-primer-size: 28px;
+  --text-primer-lh: 46px;
+
+  /* 8pt Spacing Scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Radii */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-pill: 9999px;
+
+  /* Shadows */
+  --shadow-card: 0 4px 16px rgba(44, 38, 33, 0.05), 0 1px 3px rgba(44, 38, 33, 0.04);
+  --shadow-elevated: 0 12px 32px rgba(44, 38, 33, 0.12);
+  --shadow-device: 0 24px 64px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.08);
+
+  /* Safe Area & Device Variables */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --mp-capsule-space: 0px;
+  --header-height: 48px;
+  --tabbar-height: 60px;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Desktop Simulated Device Safe Areas */
+[data-device='iphone15'] {
+  --safe-top: 48px;
+  --safe-bottom: 24px;
+  --mp-capsule-space: 0px;
+}
+
+[data-device='iphonese'] {
+  --safe-top: 20px;
+  --safe-bottom: 0px;
+  --mp-capsule-space: 0px;
+}
+
+[data-device='miniprogram'] {
+  --safe-top: 48px;
+  --safe-bottom: 24px;
+  --mp-capsule-space: 96px;
+}
