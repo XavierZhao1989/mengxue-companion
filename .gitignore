@@ -1,5 +1,6 @@
 node_modules
 dist
+.swc
 .DS_Store
 *.local
 docs/05-Interview-Pitch-Script.md

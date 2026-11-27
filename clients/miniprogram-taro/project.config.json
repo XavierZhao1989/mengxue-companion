@@ -2,7 +2,7 @@
   "miniprogramRoot": "dist/",
   "projectname": "mengxue-companion",
   "description": "启蒙小笺 · 亲子蒙学伴读微信小程序 (Taro React + TS)",
-  "appid": "touristappid",
+  "appid": "wx195148755afd5ac8",
   "setting": {
     "urlCheck": false,
     "es6": true,
