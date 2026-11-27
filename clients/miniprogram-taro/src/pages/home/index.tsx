@@ -114,8 +114,12 @@ export default function HomePage() {
                       key={child.id}
                       onClick={async () => {
                         if (active) return;
-                        await switchChildMp(child.id);
-                        loadData();
+                        try {
+                          await switchChildMp(child.id);
+                          loadData();
+                        } catch {
+                          Taro.showToast({ title: '切换失败，请重试', icon: 'none' });
+                        }
                       }}
                       className='mx-pill'
                       style={{

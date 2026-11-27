@@ -13,16 +13,22 @@ export const NavBar: React.FC<NavBarProps> = ({ title, showBack = false, onBack 
     try {
       const win = Taro.getWindowInfo();
       const menu = Taro.getMenuButtonBoundingClientRect();
-      const statusBarHeight = win.statusBarHeight ?? 44;
-      const navHeight = (menu.top - statusBarHeight) * 2 + menu.height;
-      const capsuleRightPadding = win.windowWidth - menu.left + 8;
+      const statusBarHeight = win.statusBarHeight ?? 20;
+      const validMenu = menu && menu.height > 0 && menu.top >= statusBarHeight;
+      const navHeight = validMenu
+        ? Math.max(44, (menu.top - statusBarHeight) * 2 + menu.height)
+        : 44;
+      const capsuleRightPadding = validMenu
+        ? Math.max(96, win.windowWidth - menu.left + 8)
+        : 96;
       return {
         statusBarHeight,
-        navHeight: Math.max(44, navHeight),
-        capsuleRightPadding: Math.max(96, capsuleRightPadding),
+        navHeight,
+        totalHeight: statusBarHeight + navHeight,
+        capsuleRightPadding,
       };
     } catch {
-      return { statusBarHeight: 44, navHeight: 44, capsuleRightPadding: 96 };
+      return { statusBarHeight: 44, navHeight: 44, totalHeight: 88, capsuleRightPadding: 96 };
     }
   }, []);
 
@@ -37,55 +43,60 @@ export const NavBar: React.FC<NavBarProps> = ({ title, showBack = false, onBack 
   };
 
   return (
-    <View
-      style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 50,
-        backgroundColor: '#FAF7F2',
-        borderBottom: '1px solid #EAE2D6',
-        paddingTop: `${metrics.statusBarHeight}px`,
-      }}
-    >
+    <>
+      <View style={{ height: `${metrics.totalHeight}px`, width: '100%' }} />
       <View
         style={{
-          height: `${metrics.navHeight}px`,
-          display: 'flex',
-          alignItems: 'center',
-          paddingLeft: showBack ? '8px' : '16px',
-          paddingRight: `${metrics.capsuleRightPadding}px`,
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 50,
+          backgroundColor: '#FAF7F2',
+          borderBottom: '1px solid #EAE2D6',
+          paddingTop: `${metrics.statusBarHeight}px`,
         }}
       >
-        {showBack && (
-          <View
-            onClick={handleBack}
-            style={{
-              width: '44px',
-              height: '44px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '20px',
-              fontWeight: 600,
-              color: '#2C2621',
-            }}
-          >
-            <Text>‹</Text>
-          </View>
-        )}
-        <Text
+        <View
           style={{
-            fontSize: '18px',
-            fontWeight: 700,
-            color: '#2C2621',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
+            height: `${metrics.navHeight}px`,
+            display: 'flex',
+            alignItems: 'center',
+            paddingLeft: showBack ? '8px' : '16px',
+            paddingRight: `${metrics.capsuleRightPadding}px`,
           }}
         >
-          {title}
-        </Text>
+          {showBack && (
+            <View
+              onClick={handleBack}
+              style={{
+                width: '44px',
+                height: '44px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '20px',
+                fontWeight: 600,
+                color: '#2C2621',
+              }}
+            >
+              <Text>‹</Text>
+            </View>
+          )}
+          <Text
+            style={{
+              fontSize: '18px',
+              fontWeight: 700,
+              color: '#2C2621',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {title}
+          </Text>
+        </View>
       </View>
-    </View>
+    </>
   );
 };

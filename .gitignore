@@ -3,5 +3,6 @@ dist
 .swc
 .DS_Store
 *.local
+project.private.config.json
 docs/05-Interview-Pitch-Script.md
 private-prep/

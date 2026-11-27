@@ -10,29 +10,51 @@ import {
   type PrimerLesson,
 } from '../../services/client';
 
+function safeDecode(value: string | undefined, fallback: string): string {
+  if (!value) return fallback;
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return fallback;
+  }
+}
+
 export default function ReaderPage() {
   const router = useRouter();
-  const lessonId = decodeURIComponent(router.params.id ?? 'sanzijing-1');
-  const childId = decodeURIComponent(router.params.childId ?? 'child-lele');
+  const lessonId = safeDecode(router.params.id, 'sanzijing-1');
+  const childId = safeDecode(router.params.childId, 'child-lele');
 
   const [lesson, setLesson] = useState<PrimerLesson | null>(null);
   const [lineIndex, setLineIndex] = useState(0);
   const [showPinyin, setShowPinyin] = useState(true);
   const [activeNote, setActiveNote] = useState<CharNote | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [celebrationStreak, setCelebrationStreak] = useState<number | null>(null);
 
+  const safeNavigateBack = () => {
+    Taro.navigateBack({ delta: 1 }).catch(() => {
+      Taro.switchTab({ url: '/pages/home/index' });
+    });
+  };
+
   const loadLesson = useCallback(async () => {
+    setLoadError(null);
     try {
-      const res = await fetchLessonDetailMp(lessonId);
+      const res = await fetchLessonDetailMp(lessonId, childId);
       setLesson(res.lesson);
-      if (res.progress && res.lesson) {
+      if (!res.lesson) {
+        setLoadError('未找到该伴读篇目');
+        return;
+      }
+      if (res.progress && res.lesson.lines.length > 0) {
         setLineIndex(Math.min(res.progress.lineIndex, res.lesson.lines.length - 1));
       }
-    } catch {
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : '加载失败，请重试');
       Taro.showToast({ title: '加载失败，请重试', icon: 'none' });
     }
-  }, [lessonId]);
+  }, [lessonId, childId]);
 
   useEffect(() => {
     loadLesson();
@@ -47,12 +69,12 @@ export default function ReaderPage() {
         cancelText: '继续伴读',
       }).then((res) => {
         if (res.confirm) {
-          Taro.navigateBack();
+          safeNavigateBack();
         }
       });
       return;
     }
-    Taro.navigateBack();
+    safeNavigateBack();
   };
 
   const changeLine = (nextIdx: number) => {
@@ -206,6 +228,18 @@ export default function ReaderPage() {
               )}
             </View>
           </View>
+        ) : loadError ? (
+          <View className='mx-card' style={{ textAlign: 'center', padding: '32px 16px' }}>
+            <Text style={{ display: 'block', fontWeight: 700, fontSize: '16px', marginBottom: '8px' }}>
+              篇目加载失败
+            </Text>
+            <Text style={{ display: 'block', color: '#6B6056', fontSize: '13px', marginBottom: '16px' }}>
+              {loadError}
+            </Text>
+            <View className='mx-btn-primary' onClick={loadLesson}>
+              重新加载
+            </View>
+          </View>
         ) : (
           <View className='mx-skeleton' style={{ height: '240px' }} />
         )}
@@ -214,10 +248,14 @@ export default function ReaderPage() {
       {/* Character Note Modal */}
       {activeNote && (
         <View
+          catchMove
           onClick={() => setActiveNote(null)}
           style={{
             position: 'fixed',
-            inset: 0,
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0,
             backgroundColor: 'rgba(0,0,0,0.45)',
             display: 'flex',
             alignItems: 'flex-end',
@@ -263,9 +301,13 @@ export default function ReaderPage() {
       {/* Check-in Celebration */}
       {celebrationStreak !== null && (
         <View
+          catchMove
           style={{
             position: 'fixed',
-            inset: 0,
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0,
             backgroundColor: 'rgba(0,0,0,0.5)',
             display: 'flex',
             alignItems: 'center',
@@ -285,7 +327,7 @@ export default function ReaderPage() {
               className='mx-btn-primary'
               onClick={() => {
                 setCelebrationStreak(null);
-                Taro.navigateBack();
+                safeNavigateBack();
               }}
             >
               返回今日伴读

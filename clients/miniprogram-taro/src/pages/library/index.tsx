@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Taro, { useDidShow } from '@tarojs/taro';
 import { Input, Text, View } from '@tarojs/components';
 import { NavBar } from '../../components/NavBar';
@@ -23,6 +23,7 @@ export default function LibraryPage() {
   const [activeChildId, setActiveChildId] = useState('child-lele');
   const [todayId, setTodayId] = useState('');
   const [loading, setLoading] = useState(true);
+  const didMountRef = useRef(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -46,6 +47,10 @@ export default function LibraryPage() {
   });
 
   useEffect(() => {
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+      return;
+    }
     const t = setTimeout(() => {
       load();
     }, 260);

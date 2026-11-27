@@ -159,11 +159,15 @@ export async function fetchLessonsMp(query: {
   }
 }
 
-export async function fetchLessonDetailMp(lessonId: string): Promise<{
+export async function fetchLessonDetailMp(
+  lessonId: string,
+  childId?: string
+): Promise<{
   lesson: PrimerLesson | null;
   progress: { lineIndex: number } | null;
 }> {
-  return requestApi(`/lessons/${encodeURIComponent(lessonId)}`);
+  const qs = childId ? `?childId=${encodeURIComponent(childId)}` : '';
+  return requestApi(`/lessons/${encodeURIComponent(lessonId)}${qs}`);
 }
 
 export async function saveProgressMp(
