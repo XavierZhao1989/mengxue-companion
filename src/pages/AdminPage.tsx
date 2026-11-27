@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   BookOpen,
   Edit3,
   Plus,
   Search,
+  Server,
   Smartphone,
   Trash2,
 } from 'lucide-react';
@@ -13,10 +14,12 @@ import { useAsyncData } from '../hooks/useAsyncData';
 import {
   createLesson,
   deleteLesson,
+  fetchBackendHealth,
   fetchDashboard,
   fetchLessons,
   togglePublishLesson,
   updateLesson,
+  type BackendHealthInfo,
 } from '../services/api';
 import {
   CATEGORY_LABELS,
@@ -41,6 +44,11 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   const [category, setCategory] = useState<Category | 'all'>('all');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingLesson, setEditingLesson] = useState<PrimerLesson | null>(null);
+  const [backendHealth, setBackendHealth] = useState<BackendHealthInfo | null>(null);
+
+  useEffect(() => {
+    fetchBackendHealth().then(setBackendHealth).catch(() => {});
+  }, []);
 
   const { status, data, retry } = useAsyncData(
     async (signal) => {
@@ -151,6 +159,27 @@ export const AdminPage: React.FC<AdminPageProps> = ({
               <BookOpen size={16} />
               <span>蒙学篇目管理</span>
             </div>
+
+            {backendHealth && (
+              <div
+                style={{
+                  marginTop: 8,
+                  padding: '8px 10px',
+                  borderRadius: 8,
+                  background: backendHealth.connected
+                    ? 'rgba(47, 125, 99, 0.2)'
+                    : 'rgba(255, 255, 255, 0.06)',
+                  color: backendHealth.connected ? '#86EFAC' : '#9CA3AF',
+                  fontSize: 11,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                <Server size={13} style={{ flexShrink: 0 }} />
+                <span>{backendHealth.label}</span>
+              </div>
+            )}
           </div>
         </div>
 

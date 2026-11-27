@@ -22,6 +22,88 @@ const KEYS = {
   progress: 'mengxue:v1:progress',
 };
 
+export interface BackendHealthInfo {
+  connected: boolean;
+  storage: 'postgres' | 'memory' | 'local';
+  label: string;
+}
+
+let remoteApiProbe: Promise<boolean> | null = null;
+
+function isBrowserEnv(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    typeof fetch !== 'undefined' &&
+    window.location.protocol.startsWith('http')
+  );
+}
+
+async function isRemoteApiAvailable(): Promise<boolean> {
+  if (!isBrowserEnv()) return false;
+  if (!remoteApiProbe) {
+    remoteApiProbe = fetch('/api/health', { method: 'GET' })
+      .then((res) => res.ok && (res.headers.get('content-type') ?? '').includes('application/json'))
+      .catch(() => false);
+  }
+  return remoteApiProbe;
+}
+
+async function fetchRemoteJson<T>(
+  path: string,
+  options: RequestInit = {},
+  signal?: AbortSignal
+): Promise<T> {
+  const res = await fetch(`/api${path}`, {
+    ...options,
+    signal,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.headers ?? {}),
+    },
+  });
+  const contentType = res.headers.get('content-type') ?? '';
+  if (!contentType.includes('application/json')) {
+    throw createApiError('ERR_BAD_GATEWAY', '服务端未返回有效 JSON 响应', true);
+  }
+  const data = (await res.json()) as T & Partial<ApiError>;
+  if (!res.ok) {
+    throw createApiError(
+      data.code ?? `HTTP_${res.status}`,
+      data.message ?? '请求失败，请稍后重试',
+      data.retryable ?? res.status >= 500
+    );
+  }
+  return data;
+}
+
+export async function fetchBackendHealth(): Promise<BackendHealthInfo> {
+  if (!isBrowserEnv()) {
+    return { connected: false, storage: 'local', label: '本地沙盒存储' };
+  }
+  try {
+    const res = await fetch('/api/health', { method: 'GET' });
+    const contentType = res.headers.get('content-type') ?? '';
+    if (!res.ok || !contentType.includes('application/json')) {
+      return { connected: false, storage: 'local', label: '本地缓存模式' };
+    }
+    const body = (await res.json()) as { ok?: boolean; storage?: 'postgres' | 'memory' };
+    if (!body.ok) {
+      return { connected: false, storage: 'local', label: '本地缓存模式' };
+    }
+    const storage = body.storage === 'postgres' ? 'postgres' : 'memory';
+    return {
+      connected: true,
+      storage,
+      label:
+        storage === 'postgres'
+          ? '云端 API · PostgreSQL 已持久化'
+          : '云端 API · 在线运行中',
+    };
+  } catch {
+    return { connected: false, storage: 'local', label: '本地缓存模式' };
+  }
+}
+
 function createAbortError(): Error {
   const err = new Error('The operation was aborted.');
   err.name = 'AbortError';
@@ -68,9 +150,9 @@ function waitUntilAborted(signal?: AbortSignal): Promise<never> {
 
 async function simulateNetwork(
   simMode: SimNetworkMode,
-  options: { signal?: AbortSignal; isMutation?: boolean } = {}
+  options: { signal?: AbortSignal; isMutation?: boolean; skipDelayIfRemote?: boolean } = {}
 ): Promise<{ fromCache: boolean }> {
-  const { signal, isMutation = false } = options;
+  const { signal, isMutation = false, skipDelayIfRemote = false } = options;
 
   if (signal?.aborted) {
     throw createAbortError();
@@ -102,7 +184,9 @@ async function simulateNetwork(
     case 'empty':
     case 'normal':
     default:
-      await sleep(180, signal);
+      if (!skipDelayIfRemote) {
+        await sleep(140, signal);
+      }
       return { fromCache: false };
   }
 }
@@ -151,10 +235,24 @@ function progressKey(childId: string, lessonId: string): string {
   return `${childId}:${lessonId}`;
 }
 
+async function shouldUseRemote(simMode: SimNetworkMode): Promise<boolean> {
+  if (simMode !== 'normal' && simMode !== 'slow') return false;
+  return isRemoteApiAvailable();
+}
+
 export async function fetchDashboard(
   simMode: SimNetworkMode,
   signal?: AbortSignal
 ): Promise<DashboardPayload> {
+  if (await shouldUseRemote(simMode)) {
+    await simulateNetwork(simMode, { signal, skipDelayIfRemote: true });
+    const data = await fetchRemoteJson<DashboardPayload>('/dashboard', {}, signal);
+    saveChildren(data.allChildren);
+    writeStorage(KEYS.activeChildId, data.activeChild.id);
+    saveDevice(data.device);
+    return data;
+  }
+
   const { fromCache } = await simulateNetwork(simMode, { signal });
 
   const children = loadChildren();
@@ -214,6 +312,13 @@ export async function switchActiveChild(
   simMode: SimNetworkMode,
   signal?: AbortSignal
 ): Promise<void> {
+  if (await shouldUseRemote(simMode)) {
+    await simulateNetwork(simMode, { signal, isMutation: true, skipDelayIfRemote: true });
+    await fetchRemoteJson(`/children/${encodeURIComponent(childId)}/activate`, { method: 'POST' }, signal);
+    writeStorage(KEYS.activeChildId, childId);
+    return;
+  }
+
   await simulateNetwork(simMode === 'empty' ? 'normal' : simMode, { signal });
   writeStorage(KEYS.activeChildId, childId);
 }
@@ -223,6 +328,21 @@ export async function fetchLessons(
   simMode: SimNetworkMode,
   signal?: AbortSignal
 ): Promise<LessonsPayload> {
+  if (await shouldUseRemote(simMode)) {
+    await simulateNetwork(simMode, { signal, skipDelayIfRemote: true });
+    const params = new URLSearchParams();
+    if (query.category) params.set('category', query.category);
+    if (query.ageGroup) params.set('ageGroup', query.ageGroup);
+    if (query.keyword) params.set('keyword', query.keyword);
+    if (query.includeUnpublished) params.set('includeUnpublished', 'true');
+    const qs = params.toString();
+    const res = await fetchRemoteJson<LessonsPayload>(`/lessons${qs ? `?${qs}` : ''}`, {}, signal);
+    if (!query.category && !query.ageGroup && !query.keyword && query.includeUnpublished) {
+      saveLessons(res.items);
+    }
+    return res;
+  }
+
   const { fromCache } = await simulateNetwork(simMode, { signal });
 
   if (simMode === 'empty') {
@@ -263,6 +383,15 @@ export async function fetchLessonById(
   simMode: SimNetworkMode,
   signal?: AbortSignal
 ): Promise<{ lesson: PrimerLesson | null; progress: ReadingProgress | null; fromCache: boolean }> {
+  if (await shouldUseRemote(simMode)) {
+    await simulateNetwork(simMode, { signal, skipDelayIfRemote: true });
+    return fetchRemoteJson<{
+      lesson: PrimerLesson | null;
+      progress: ReadingProgress | null;
+      fromCache: boolean;
+    }>(`/lessons/${encodeURIComponent(lessonId)}`, {}, signal);
+  }
+
   const { fromCache } = await simulateNetwork(simMode, { signal });
 
   if (simMode === 'empty') {
@@ -297,6 +426,22 @@ export function saveReadingProgressSync(
   };
   map[progressKey(childId, lessonId)] = entry;
   saveProgressMap(map);
+
+  if (isBrowserEnv()) {
+    isRemoteApiAvailable()
+      .then((ok) => {
+        if (!ok) return;
+        return fetch('/api/progress', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ childId, lessonId, lineIndex }),
+        });
+      })
+      .catch(() => {
+        // Ignore background sync failure; local progress is preserved
+      });
+  }
+
   return entry;
 }
 
@@ -312,6 +457,22 @@ export async function completeCheckIn(
   simMode: SimNetworkMode,
   signal?: AbortSignal
 ): Promise<{ child: ChildProfile; alreadyCheckedToday: boolean }> {
+  if (await shouldUseRemote(simMode)) {
+    await simulateNetwork(simMode, { signal, isMutation: true, skipDelayIfRemote: true });
+    const children = loadChildren();
+    const activeId = loadActiveChildId(children);
+    const res = await fetchRemoteJson<{ child: ChildProfile; alreadyCheckedToday: boolean }>(
+      '/checkins',
+      {
+        method: 'POST',
+        body: JSON.stringify({ childId: activeId, lessonId, durationMinutes }),
+      },
+      signal
+    );
+    clearReadingProgressSync(activeId, lessonId);
+    return res;
+  }
+
   await simulateNetwork(simMode, { signal, isMutation: true });
 
   const children = loadChildren();
@@ -351,6 +512,21 @@ export async function setTodayLesson(
   simMode: SimNetworkMode,
   signal?: AbortSignal
 ): Promise<ChildProfile> {
+  if (await shouldUseRemote(simMode)) {
+    await simulateNetwork(simMode, { signal, isMutation: true, skipDelayIfRemote: true });
+    const children = loadChildren();
+    const activeId = loadActiveChildId(children);
+    const res = await fetchRemoteJson<{ child: ChildProfile }>(
+      `/children/${encodeURIComponent(activeId)}/today-lesson`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ lessonId }),
+      },
+      signal
+    );
+    return res.child;
+  }
+
   await simulateNetwork(simMode, { signal, isMutation: true });
 
   const children = loadChildren();
@@ -404,6 +580,17 @@ export async function toggleDeviceConnection(
   simMode: SimNetworkMode,
   signal?: AbortSignal
 ): Promise<HardwareDevice> {
+  if (await shouldUseRemote(simMode)) {
+    await simulateNetwork(simMode, { signal, isMutation: true, skipDelayIfRemote: true });
+    const res = await fetchRemoteJson<{ device: HardwareDevice }>(
+      '/device/toggle',
+      { method: 'POST' },
+      signal
+    );
+    saveDevice(res.device);
+    return res.device;
+  }
+
   await simulateNetwork(simMode, { signal, isMutation: true });
   const current = loadDevice();
   const next: HardwareDevice = {
@@ -420,6 +607,16 @@ export async function createLesson(
   simMode: SimNetworkMode = 'normal',
   signal?: AbortSignal
 ): Promise<PrimerLesson> {
+  if (await shouldUseRemote(simMode)) {
+    await simulateNetwork(simMode, { signal, isMutation: true, skipDelayIfRemote: true });
+    const res = await fetchRemoteJson<{ lesson: PrimerLesson }>(
+      '/lessons',
+      { method: 'POST', body: JSON.stringify(input) },
+      signal
+    );
+    return res.lesson;
+  }
+
   await simulateNetwork(simMode, { signal, isMutation: true });
   const lessons = loadLessons();
   const newLesson: PrimerLesson = {
@@ -436,6 +633,16 @@ export async function updateLesson(
   simMode: SimNetworkMode = 'normal',
   signal?: AbortSignal
 ): Promise<PrimerLesson> {
+  if (await shouldUseRemote(simMode)) {
+    await simulateNetwork(simMode, { signal, isMutation: true, skipDelayIfRemote: true });
+    const res = await fetchRemoteJson<{ lesson: PrimerLesson }>(
+      `/lessons/${encodeURIComponent(lesson.id)}`,
+      { method: 'PUT', body: JSON.stringify(lesson) },
+      signal
+    );
+    return res.lesson;
+  }
+
   await simulateNetwork(simMode, { signal, isMutation: true });
   const lessons = loadLessons();
   const updatedLesson: PrimerLesson = {
@@ -452,6 +659,16 @@ export async function togglePublishLesson(
   simMode: SimNetworkMode = 'normal',
   signal?: AbortSignal
 ): Promise<PrimerLesson[]> {
+  if (await shouldUseRemote(simMode)) {
+    await simulateNetwork(simMode, { signal, isMutation: true, skipDelayIfRemote: true });
+    const res = await fetchRemoteJson<{ items: PrimerLesson[] }>(
+      `/lessons/${encodeURIComponent(lessonId)}/publish`,
+      { method: 'PATCH' },
+      signal
+    );
+    return res.items;
+  }
+
   await simulateNetwork(simMode, { signal, isMutation: true });
   const lessons = loadLessons();
   const next = lessons.map((l) =>
@@ -466,6 +683,16 @@ export async function deleteLesson(
   simMode: SimNetworkMode = 'normal',
   signal?: AbortSignal
 ): Promise<PrimerLesson[]> {
+  if (await shouldUseRemote(simMode)) {
+    await simulateNetwork(simMode, { signal, isMutation: true, skipDelayIfRemote: true });
+    const res = await fetchRemoteJson<{ items: PrimerLesson[] }>(
+      `/lessons/${encodeURIComponent(lessonId)}`,
+      { method: 'DELETE' },
+      signal
+    );
+    return res.items;
+  }
+
   await simulateNetwork(simMode, { signal, isMutation: true });
   const lessons = loadLessons().filter((l) => l.id !== lessonId);
   saveLessons(lessons);
@@ -477,4 +704,15 @@ export function resetDemoData(): void {
   saveLessons(SEED_LESSONS);
   saveChildren(createSeedChildren());
   saveDevice(SEED_DEVICE);
+
+  if (isBrowserEnv()) {
+    isRemoteApiAvailable()
+      .then((ok) => {
+        if (!ok) return;
+        return fetch('/api/demo/reset', { method: 'POST' });
+      })
+      .catch(() => {
+        // Ignore background reset error
+      });
+  }
 }

@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "启蒙小笺",
+    "slug": "mengxue-companion",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#FAF7F2",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.xavierzhao.mengxue"
+    },
+    "android": {
+      "package": "com.xavierzhao.mengxue",
+      "adaptiveIcon": {
+        "backgroundColor": "#FAF7F2"
+      }
+    }
+  }
+}
