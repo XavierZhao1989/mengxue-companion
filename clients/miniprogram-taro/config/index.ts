@@ -15,6 +15,12 @@ export default defineConfig(async (merge) => {
     },
     sourceRoot: 'src',
     outputRoot: 'dist',
+    env: {
+      TARO_APP_CLOUD_ENV_ID: JSON.stringify(process.env.TARO_APP_CLOUD_ENV_ID || ''),
+      TARO_APP_CLOUD_SERVICE_NAME: JSON.stringify(
+        process.env.TARO_APP_CLOUD_SERVICE_NAME || 'mengxue-api'
+      ),
+    },
     plugins: ['@tarojs/plugin-framework-react'],
     framework: 'react',
     compiler: 'webpack5',
