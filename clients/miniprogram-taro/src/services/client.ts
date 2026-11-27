@@ -55,8 +55,8 @@ export interface DashboardPayload {
 
 // Configure CLOUD_ENV_ID + CLOUD_SERVICE_NAME when deploying via WeChat CloudRun (zero ICP filing).
 // Leave CLOUD_ENV_ID empty to call the public Vercel HTTPS API directly in DevTools/Experience mode.
-export const CLOUD_ENV_ID = '';
-export const CLOUD_SERVICE_NAME = 'mengxue-api';
+export const CLOUD_ENV_ID = process.env.TARO_APP_CLOUD_ENV_ID || '';
+export const CLOUD_SERVICE_NAME = process.env.TARO_APP_CLOUD_SERVICE_NAME || 'mengxue-api';
 export const API_BASE_URL = 'https://mengxue-companion.vercel.app/api';
 
 const CACHE_PREFIX = 'mx_mp_cache_';

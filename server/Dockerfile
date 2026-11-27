@@ -13,6 +13,10 @@ FROM node:22-alpine
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=8080
+ENV TZ=Asia/Shanghai
+RUN apk add --no-cache tzdata && \
+  ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+  echo "Asia/Shanghai" > /etc/timezone
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/server ./server
@@ -21,4 +25,4 @@ COPY --from=builder /app/src/data ./src/data
 COPY --from=builder /app/src/utils ./src/utils
 
 EXPOSE 8080
-CMD ["npx", "tsx", "server/standalone.ts"]
+CMD ["./node_modules/.bin/tsx", "server/standalone.ts"]
