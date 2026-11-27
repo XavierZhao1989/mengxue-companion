@@ -19,14 +19,20 @@ export default defineAppConfig({
       {
         pagePath: 'pages/home/index',
         text: '今日伴读',
+        iconPath: 'assets/tab/home.png',
+        selectedIconPath: 'assets/tab/home-active.png',
       },
       {
         pagePath: 'pages/library/index',
         text: '蒙学馆',
+        iconPath: 'assets/tab/library.png',
+        selectedIconPath: 'assets/tab/library-active.png',
       },
       {
         pagePath: 'pages/profile/index',
         text: '伴学档案',
+        iconPath: 'assets/tab/profile.png',
+        selectedIconPath: 'assets/tab/profile-active.png',
       },
     ],
   },

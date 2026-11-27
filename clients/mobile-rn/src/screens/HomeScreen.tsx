@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -101,8 +102,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 onPress={async () => {
                   if (active) return;
                   Haptics.selectionAsync().catch(() => {});
-                  await switchChildRn(c.id);
-                  load();
+                  try {
+                    await switchChildRn(c.id);
+                    load();
+                  } catch {
+                    Alert.alert('切换失败', '网络开小差了，请稍后重试');
+                  }
                 }}
                 style={[styles.pill, active && styles.pillActive]}
               >

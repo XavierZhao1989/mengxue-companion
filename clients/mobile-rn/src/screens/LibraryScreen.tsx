@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -34,13 +34,20 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({ onOpenReader, onMu
   const [keyword, setKeyword] = useState('');
   const [items, setItems] = useState<PrimerLesson[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [reloadTick, setReloadTick] = useState(0);
   const [childId, setChildId] = useState('child-lele');
   const [todayId, setTodayId] = useState('');
+
+  const retryLoad = useCallback(() => {
+    setReloadTick((t) => t + 1);
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
     const timer = setTimeout(() => {
       setLoading(true);
+      setErrorMsg(null);
       Promise.all([
         fetchLessonsRn({ category, keyword }, controller.signal),
         fetchDashboardRn(controller.signal),
@@ -53,6 +60,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({ onOpenReader, onMu
         })
         .catch((err) => {
           if (err instanceof Error && err.name === 'AbortError') return;
+          setErrorMsg(err instanceof Error ? err.message : '加载失败，请重试');
           setLoading(false);
         });
     }, 250);
@@ -61,7 +69,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({ onOpenReader, onMu
       clearTimeout(timer);
       controller.abort();
     };
-  }, [category, keyword]);
+  }, [category, keyword, reloadTick]);
 
   return (
     <View style={styles.container}>
@@ -94,6 +102,27 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({ onOpenReader, onMu
         <View style={styles.center}>
           <ActivityIndicator color={COLORS.brandPrimary} />
         </View>
+      ) : errorMsg ? (
+        <View style={styles.center}>
+          <Text style={styles.emptyTitle}>蒙学馆加载失败</Text>
+          <Text style={styles.emptyDesc}>{errorMsg}</Text>
+          <Pressable style={styles.retryBtn} onPress={retryLoad}>
+            <Text style={styles.retryBtnText}>重新加载</Text>
+          </Pressable>
+        </View>
+      ) : items.length === 0 ? (
+        <View style={styles.center}>
+          <Text style={styles.emptyTitle}>没有找到匹配的篇目</Text>
+          <Pressable
+            style={styles.retryBtn}
+            onPress={() => {
+              setCategory('all');
+              setKeyword('');
+            }}
+          >
+            <Text style={styles.retryBtnText}>清空筛选条件</Text>
+          </Pressable>
+        </View>
       ) : (
         <ScrollView contentContainerStyle={styles.list}>
           {items.map((item) => {
@@ -113,10 +142,14 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({ onOpenReader, onMu
                   <Pressable
                     disabled={isToday}
                     onPress={async () => {
-                      await setTodayLessonRn(childId, item.id);
-                      setTodayId(item.id);
-                      onMutated();
-                      Alert.alert('已设置', `《${item.title}》已设为今日伴读`);
+                      try {
+                        await setTodayLessonRn(childId, item.id);
+                        setTodayId(item.id);
+                        onMutated();
+                        Alert.alert('已设置', `《${item.title}》已设为今日伴读`);
+                      } catch {
+                        Alert.alert('设置失败', '网络开小差了，请稍后重试');
+                      }
                     }}
                     style={[
                       styles.setBtn,
@@ -145,7 +178,17 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({ onOpenReader, onMu
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 10 },
+  emptyTitle: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary },
+  emptyDesc: { fontSize: 13, color: COLORS.textSecondary, textAlign: 'center' },
+  retryBtn: {
+    marginTop: 4,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: COLORS.brandPrimary,
+  },
+  retryBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
   filterHeader: {
     padding: SPACING.lg,
     gap: 10,

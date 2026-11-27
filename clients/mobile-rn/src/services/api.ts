@@ -133,9 +133,11 @@ export async function fetchLessonsRn(
 
 export async function fetchLessonByIdRn(
   lessonId: string,
+  childId?: string,
   signal?: AbortSignal
 ): Promise<{ lesson: PrimerLesson | null; progress: { lineIndex: number } | null }> {
-  return requestJson(`/lessons/${encodeURIComponent(lessonId)}`, {}, signal);
+  const qs = childId ? `?childId=${encodeURIComponent(childId)}` : '';
+  return requestJson(`/lessons/${encodeURIComponent(lessonId)}${qs}`, {}, signal);
 }
 
 export async function saveProgressRn(

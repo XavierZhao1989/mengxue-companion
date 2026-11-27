@@ -10,6 +10,7 @@
       }
     },
     "production": {
+      "distribution": "store",
       "ios": {
         "simulator": false
       },
@@ -17,5 +18,8 @@
         "buildType": "app-bundle"
       }
     }
+  },
+  "submit": {
+    "production": {}
   }
 }

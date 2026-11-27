@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -40,23 +40,49 @@ export const ReaderScreen: React.FC<ReaderScreenProps> = ({
   const [speaking, setSpeaking] = useState(false);
   const [selectedNote, setSelectedNote] = useState<CharNote | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    fetchLessonByIdRn(lessonId, controller.signal)
+  const loadLesson = useCallback((signal?: AbortSignal) => {
+    setLoadError(null);
+    fetchLessonByIdRn(lessonId, childId, signal)
       .then((res) => {
+        if (!res.lesson) {
+          setLoadError('未找到该伴读篇目');
+          return;
+        }
         setLesson(res.lesson);
-        if (res.progress && res.lesson) {
+        if (res.progress && res.lesson.lines.length > 0) {
           setLineIndex(Math.min(res.progress.lineIndex, res.lesson.lines.length - 1));
         }
       })
-      .catch(() => {});
+      .catch((err) => {
+        if (err instanceof Error && err.name === 'AbortError') return;
+        setLoadError(err instanceof Error ? err.message : '加载失败，请重试');
+      });
+  }, [lessonId, childId]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    loadLesson(controller.signal);
 
     return () => {
       controller.abort();
       Speech.stop();
     };
-  }, [lessonId]);
+  }, [loadLesson]);
+
+  const handleBack = () => {
+    Speech.stop();
+    setSpeaking(false);
+    if (lesson && lineIndex > 0) {
+      Alert.alert('先歇一会儿吗？', `已保存读到第 ${lineIndex + 1} 句，下次可直接续读。`, [
+        { text: '继续伴读', style: 'cancel' },
+        { text: '保存退出', onPress: onBack },
+      ]);
+      return;
+    }
+    onBack();
+  };
 
   const handleSpeak = () => {
     if (!lesson) return;
@@ -106,6 +132,27 @@ export const ReaderScreen: React.FC<ReaderScreenProps> = ({
     }
   };
 
+  if (loadError && !lesson) {
+    return (
+      <View style={styles.center}>
+        <Text style={{ fontSize: 16, fontWeight: '700', color: COLORS.textPrimary }}>篇目加载失败</Text>
+        <Text style={{ marginTop: 6, fontSize: 13, color: COLORS.textSecondary }}>{loadError}</Text>
+        <Pressable
+          style={{
+            marginTop: 14,
+            paddingHorizontal: 20,
+            paddingVertical: 10,
+            borderRadius: 12,
+            backgroundColor: COLORS.brandPrimary,
+          }}
+          onPress={() => loadLesson()}
+        >
+          <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>重新加载</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
   if (!lesson) {
     return (
       <View style={styles.center}>
@@ -121,13 +168,7 @@ export const ReaderScreen: React.FC<ReaderScreenProps> = ({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable
-          onPress={() => {
-            Speech.stop();
-            onBack();
-          }}
-          style={styles.backBtn}
-        >
+        <Pressable onPress={handleBack} style={styles.backBtn}>
           <Text style={{ fontSize: 20, color: COLORS.textPrimary }}>‹ 返回</Text>
         </Pressable>
         <Text style={styles.headerTitle} numberOfLines={1}>

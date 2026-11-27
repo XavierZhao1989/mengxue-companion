@@ -15,6 +15,12 @@ export default defineConfig(async (merge) => {
     },
     sourceRoot: 'src',
     outputRoot: 'dist',
+    copy: {
+      patterns: [
+        { from: 'src/assets/tab/', to: 'dist/assets/tab/' },
+      ],
+      options: {},
+    },
     env: {
       TARO_APP_CLOUD_ENV_ID: JSON.stringify(process.env.TARO_APP_CLOUD_ENV_ID || ''),
       TARO_APP_CLOUD_SERVICE_NAME: JSON.stringify(
