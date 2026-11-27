@@ -1,4 +1,4 @@
-import { apiApp } from '../server/app';
+import { apiApp } from '../server/app.js';
 
 const handle = (request: Request) => apiApp.fetch(request);
 

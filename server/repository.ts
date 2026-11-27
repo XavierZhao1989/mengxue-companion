@@ -1,6 +1,6 @@
 import { neon } from '@neondatabase/serverless';
-import { SEED_LESSONS } from '../src/data/seedLessons';
-import { createSeedChildren, SEED_DEVICE } from '../src/data/seedProfiles';
+import { SEED_LESSONS } from '../src/data/seedLessons.js';
+import { createSeedChildren, SEED_DEVICE } from '../src/data/seedProfiles.js';
 import type {
   AgeGroup,
   Category,
@@ -13,8 +13,8 @@ import type {
   PrimerLesson,
   ReadingProgress,
   VerseLine,
-} from '../src/types/domain';
-import { getTodayKey } from '../src/utils/date';
+} from '../src/types/domain.js';
+import { getTodayKey } from '../src/utils/date.js';
 
 export type StorageMode = 'postgres' | 'memory';
 

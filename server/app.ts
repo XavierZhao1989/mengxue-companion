@@ -2,8 +2,8 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { metric } from '@vercel/functions';
 import { z } from 'zod';
-import { getRepository } from './repository';
-import type { AgeGroup, Category, PrimerLesson } from '../src/types/domain';
+import { getRepository } from './repository.js';
+import type { AgeGroup, Category, PrimerLesson } from '../src/types/domain.js';
 
 const VerseLineSchema = z.object({
   id: z.string().min(1),

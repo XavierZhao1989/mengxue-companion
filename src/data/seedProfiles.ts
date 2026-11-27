@@ -1,5 +1,5 @@
-import type { ChildProfile, HardwareDevice } from '../types/domain';
-import { getDaysAgoKey } from '../utils/date';
+import type { ChildProfile, HardwareDevice } from '../types/domain.js';
+import { getDaysAgoKey } from '../utils/date.js';
 
 export function createSeedChildren(baseDate: Date = new Date()): ChildProfile[] {
   return [

@@ -1,6 +1,6 @@
 import { serve } from '@hono/node-server';
-import { apiApp } from './app';
-import { getRepository } from './repository';
+import { apiApp } from './app.js';
+import { getRepository } from './repository.js';
 
 const port = Number(process.env.PORT || 8080);
 const { storageMode } = getRepository();

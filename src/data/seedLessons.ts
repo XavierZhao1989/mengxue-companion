@@ -1,4 +1,4 @@
-import type { PrimerLesson } from '../types/domain';
+import type { PrimerLesson } from '../types/domain.js';
 
 export const SEED_LESSONS: PrimerLesson[] = [
   {
